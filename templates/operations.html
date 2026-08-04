@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Recettes & Dépenses{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Recettes &amp; Dépenses</h1>
+        <p class="page-sub">Enregistrez et suivez toutes vos opérations financières.</p>
+    </div>
+</div>
+
+<div class="dashboard-grid two-col">
+    <div class="panel">
+        <h3>Nouvelle opération</h3>
+        <form method="POST" action="{{ url_for('operations') }}" class="form-grid">
+            <div class="type-toggle">
+                <label class="type-option">
+                    <input type="radio" name="type" value="recette" checked onchange="mada.updateCategories(this.form)">
+                    <span>Recette</span>
+                </label>
+                <label class="type-option">
+                    <input type="radio" name="type" value="depense" onchange="mada.updateCategories(this.form)">
+                    <span>Dépense</span>
+                </label>
+            </div>
+
+            <label>Catégorie</label>
+            <select name="categorie" id="categorie-select" required>
+                {% for c in categories_recette %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Montant (DZD)</label>
+            <input type="number" name="montant" step="0.01" min="0.01" placeholder="0.00" required>
+
+            <label>Date</label>
+            <input type="date" name="date_operation" value="{{ today }}" required>
+
+            <label>Description (optionnel)</label>
+            <textarea name="description" rows="2" placeholder="Détails de l'opération..."></textarea>
+
+            <button type="submit" class="btn-primary btn-block">Enregistrer</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header-row">
+            <h3>Historique</h3>
+            <div class="filter-tabs">
+                <a href="{{ url_for('operations') }}" class="{{ 'active' if not filtre_type }}">Tout</a>
+                <a href="{{ url_for('operations', type='recette') }}" class="{{ 'active' if filtre_type=='recette' }}">Recettes</a>
+                <a href="{{ url_for('operations', type='depense') }}" class="{{ 'active' if filtre_type=='depense' }}">Dépenses</a>
+            </div>
+        </div>
+
+        {% if operations %}
+        <table class="data-table">
+            <thead>
+                <tr><th>Date</th><th>Catégorie</th><th>Description</th><th>Montant</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for op in operations %}
+                <tr>
+                    <td>{{ op.date_operation }}</td>
+                    <td><span class="tag tag-{{ op.type }}">{{ op.categorie }}</span></td>
+                    <td class="cell-desc">{{ op.description or '—' }}</td>
+                    <td class="cell-amount {{ 'amount-pos' if op.type=='recette' else 'amount-neg' }}">
+                        {{ '+' if op.type=='recette' else '-' }}{{ "%.2f"|format(op.montant) }} DZD
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_operation', op_id=op.id) }}" onsubmit="return confirm('Supprimer cette opération ?');">
+                            <button type="submit" class="btn-icon-del" title="Supprimer">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">Aucune opération enregistrée pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CATEGORIES_RECETTE = {{ categories_recette|tojson }};
+    const CATEGORIES_DEPENSE = {{ categories_depense|tojson }};
+</script>
+{% endblock %}

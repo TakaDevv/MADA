@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block guest_content %}
+<div class="auth-page">
+    <div class="auth-visual">
+        <div class="brand-mark brand-mark-lg">M</div>
+        <h1>MADA</h1>
+        <p>La gestion comptable, fiscale et administrative simplifiée pour les startups, micro-entreprises et freelances en Algérie.</p>
+        <ul class="auth-points">
+            <li>Suivi des recettes &amp; dépenses en temps réel</li>
+            <li>Déclarations IRG, TVA et CASNOS centralisées</li>
+            <li>Rapports générés en un clic</li>
+        </ul>
+    </div>
+    <div class="auth-form-wrap">
+        <div class="auth-card">
+            <h2>Connexion</h2>
+            <p class="auth-sub">Accédez à votre espace de gestion.</p>
+            <form method="POST" action="{{ url_for('login') }}">
+                <label>Email</label>
+                <input type="email" name="email" value="{{ email or '' }}" placeholder="vous@entreprise.dz" required autofocus>
+
+                <label>Mot de passe</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+
+                <button type="submit" class="btn-primary btn-block">Se connecter</button>
+            </form>
+            <p class="auth-switch">Pas encore de compte ? <a href="{{ url_for('register') }}">Créer un compte</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

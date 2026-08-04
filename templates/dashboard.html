@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Tableau de bord</h1>
+        <p class="page-sub">Vue d'ensemble de votre activité, {{ current_user.nom.split(' ')[0] }}.</p>
+    </div>
+    <a href="{{ url_for('operations') }}" class="btn-primary">+ Nouvelle opération</a>
+</div>
+
+{% if nb_declarations_retard > 0 %}
+<div class="alert-banner">
+    ⚠ Vous avez {{ nb_declarations_retard }} déclaration(s) fiscale(s) en retard.
+    <a href="{{ url_for('declarations') }}">Voir les déclarations →</a>
+</div>
+{% endif %}
+
+<div class="kpi-grid">
+    <div class="kpi-card kpi-solde">
+        <div class="kpi-label">Solde actuel</div>
+        <div class="kpi-value">{{ "%.2f"|format(solde) }} <span>DZD</span></div>
+    </div>
+    <div class="kpi-card kpi-recette">
+        <div class="kpi-label">Total recettes</div>
+        <div class="kpi-value">{{ "%.2f"|format(total_recettes) }} <span>DZD</span></div>
+    </div>
+    <div class="kpi-card kpi-depense">
+        <div class="kpi-label">Total dépenses</div>
+        <div class="kpi-value">{{ "%.2f"|format(total_depenses) }} <span>DZD</span></div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="panel panel-chart">
+        <h3>Évolution recettes / dépenses</h3>
+        {% if evolution %}
+        <canvas id="evolutionChart" height="220"></canvas>
+        {% else %}
+        <p class="empty-state">Aucune donnée pour le moment. Ajoutez une opération pour voir l'évolution.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel panel-chart">
+        <h3>Répartition des dépenses</h3>
+        {% if depenses_par_categorie %}
+        <canvas id="categorieChart" height="220"></canvas>
+        {% else %}
+        <p class="empty-state">Aucune dépense enregistrée.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="panel-header-row">
+            <h3>Dernières opérations</h3>
+            <a href="{{ url_for('operations') }}" class="link-small">Voir tout</a>
+        </div>
+        {% if dernieres_operations %}
+        <table class="mini-table">
+            {% for op in dernieres_operations %}
+            <tr>
+                <td class="cell-date">{{ op.date_operation }}</td>
+                <td>{{ op.categorie }}</td>
+                <td class="cell-amount {{ 'amount-pos' if op.type=='recette' else 'amount-neg' }}">
+                    {{ '+' if op.type=='recette' else '-' }}{{ "%.2f"|format(op.montant) }} DZD
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty-state">Aucune opération enregistrée.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="panel-header-row">
+            <h3>Prochaines échéances fiscales</h3>
+            <a href="{{ url_for('declarations') }}" class="link-small">Voir tout</a>
+        </div>
+        {% if prochaines_declarations %}
+        <ul class="declaration-list">
+            {% for d in prochaines_declarations %}
+            <li>
+                <span class="decl-badge decl-{{ d.type|lower }}">{{ d.type }}</span>
+                <span class="decl-periode">{{ d.periode }}</span>
+                <span class="decl-echeance {{ 'text-danger' if d.statut=='en retard' else '' }}">{{ d.date_echeance }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-state">Aucune échéance en attente.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+{% if evolution %}
+new Chart(document.getElementById('evolutionChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for e in evolution %}"{{ e.mois }}",{% endfor %}],
+        datasets: [
+            {
+                label: 'Recettes',
+                data: [{% for e in evolution %}{{ e.recettes }},{% endfor %}],
+                borderColor: '#2f9e6b',
+                backgroundColor: 'rgba(47,158,107,0.1)',
+                tension: 0.35,
+                fill: true,
+            },
+            {
+                label: 'Dépenses',
+                data: [{% for e in evolution %}{{ e.depenses }},{% endfor %}],
+                borderColor: '#d9534f',
+                backgroundColor: 'rgba(217,83,79,0.08)',
+                tension: 0.35,
+                fill: true,
+            }
+        ]
+    },
+    options: {
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+{% endif %}
+
+{% if depenses_par_categorie %}
+new Chart(document.getElementById('categorieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: [{% for c in depenses_par_categorie %}"{{ c.categorie }}",{% endfor %}],
+        datasets: [{
+            data: [{% for c in depenses_par_categorie %}{{ c.total }},{% endfor %}],
+            backgroundColor: ['#1d6f52','#2f9e6b','#7fc9a5','#d9534f','#e8998d','#f0c987','#8aa0c4'],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

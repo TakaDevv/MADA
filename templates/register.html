@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Créer un compte{% endblock %}
+{% block guest_content %}
+<div class="auth-page">
+    <div class="auth-visual">
+        <div class="brand-mark brand-mark-lg">M</div>
+        <h1>MADA</h1>
+        <p>Rejoignez la plateforme pensée pour simplifier votre comptabilité au quotidien.</p>
+        <ul class="auth-points">
+            <li>Créé pour le contexte algérien</li>
+            <li>Interface simple et sécurisée</li>
+            <li>Gain de temps sur les tâches administratives</li>
+        </ul>
+    </div>
+    <div class="auth-form-wrap">
+        <div class="auth-card">
+            <h2>Créer un compte</h2>
+            <p class="auth-sub">Démarrez la gestion de votre activité.</p>
+            <form method="POST" action="{{ url_for('register') }}">
+                <label>Nom complet</label>
+                <input type="text" name="nom" value="{{ nom or '' }}" placeholder="Amine Benali" required autofocus>
+
+                <label>Entreprise / Activité (optionnel)</label>
+                <input type="text" name="entreprise" value="{{ entreprise or '' }}" placeholder="Nom de votre entreprise">
+
+                <label>Email</label>
+                <input type="email" name="email" value="{{ email or '' }}" placeholder="vous@entreprise.dz" required>
+
+                <label>Mot de passe</label>
+                <input type="password" name="password" placeholder="6 caractères minimum" required>
+
+                <label>Confirmer le mot de passe</label>
+                <input type="password" name="confirm" placeholder="••••••••" required>
+
+                <button type="submit" class="btn-primary btn-block">Créer mon compte</button>
+            </form>
+            <p class="auth-switch">Déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>{{ d.type }} - {{ d.periode }}</title>
+<style>
+    :root {
+        --ink: #1c1c1c;
+        --muted: #6b6b6b;
+        --line: #d8d8d8;
+        --accent: #7a5c1e;
+        --accent-bg: #faf3e3;
+        --panel-bg: #fafafa;
+    }
+    @page { size: A4; margin: 2cm; }
+    * { box-sizing: border-box; }
+    body {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 13px;
+        color: var(--ink);
+        max-width: 780px;
+        margin: 2rem auto;
+        line-height: 1.55;
+        padding: 0 1rem;
+    }
+
+    .doc-header { text-align: center; padding-bottom: 16px; margin-bottom: 20px; border-bottom: 2px solid var(--ink); }
+    .doc-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 4px; letter-spacing: 0.02em; }
+    .doc-header .sub { font-size: 12px; color: var(--muted); }
+
+    .notice {
+        background: var(--accent-bg);
+        border: 1px solid #e3c98a;
+        color: #5a4416;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        font-size: 12.5px;
+    }
+
+    .section { margin-bottom: 22px; }
+    .section-title {
+        font-weight: 600;
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding-bottom: 6px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    tr + tr td, tr + tr th { border-top: 1px solid var(--line); }
+    th, td { padding: 7px 4px; text-align: left; font-size: 13px; vertical-align: top; }
+    th { width: 42%; font-weight: 400; color: var(--muted); }
+    td { font-weight: 500; }
+
+    .row-total th, .row-total td { border-top: 2px solid var(--ink); font-weight: 700; font-size: 14px; padding-top: 10px; }
+
+    .no-print { margin-top: 2.5rem; text-align: center; }
+    .no-print button {
+        font-family: inherit;
+        font-size: 13px;
+        padding: 8px 18px;
+        border: 1px solid var(--ink);
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>{{ d.type }} — {{ d.periode }}</h1>
+    <div class="sub">Édité le {{ date_edition }}</div>
+</div>
+
+{% if d.type == 'CASNOS' %}
+<div class="notice">
+    La CASNOS est une caisse de sécurité sociale, pas la DGI : il n'existe pas d'imprimé
+    fiscal officiel équivalent à reproduire. Ceci est un récapitulatif de suivi, pas un
+    formulaire à déposer tel quel.
+</div>
+{% else %}
+<div class="notice">
+    Le calibrage du PDF officiel {{ d.type }} n'est pas encore complet pour tous les champs
+    — voir README.md / tools/calibrate.py. En attendant, voici un récapitulatif de vos saisies.
+</div>
+{% endif %}
+
+<div class="section">
+    <div class="section-title">Identification</div>
+    <table>
+        <tr><th>NIF</th><td>{{ d.nif }}</td></tr>
+        <tr><th>Nom / Raison sociale</th><td>{{ d.raison_sociale }}</td></tr>
+        <tr><th>Adresse</th><td>{{ d.adresse }}</td></tr>
+        <tr><th>N° d'article</th><td>{{ d.numero_article or '—' }}</td></tr>
+        <tr><th>Échéance</th><td>{{ d.date_echeance }}</td></tr>
+        <tr><th>Statut</th><td>{{ d.statut }}</td></tr>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-title">Détails saisis</div>
+    <table>
+        {% for label, value, is_total in detail_rows %}
+        <tr{% if is_total %} class="row-total"{% endif %}>
+            <th>{{ label }}</th><td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="no-print">
+    <button onclick="window.print()">Imprimer / Enregistrer en PDF</button>
+</div>
+
+</body>
+</html>

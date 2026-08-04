@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Déclarations{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Déclarations fiscales</h1>
+        <p class="page-sub">
+            Le document généré est le vrai formulaire DGI (G50, G12 bis) —
+            vos saisies sont superposées sur le PDF officiel, rien n'est redessiné.
+        </p>
+    </div>
+</div>
+
+<div class="dashboard-grid two-col">
+    <div class="panel">
+        <h3>Ajouter une déclaration</h3>
+        <form method="POST" action="{{ url_for('declarations') }}" class="form-grid">
+
+            <label>Déclaration</label>
+            <select name="type" id="type-declaration" required onchange="toggleFormulaireFields()">
+                {% for code, libelle in declarations_dgi.items() %}
+                <option value="{{ code }}">{{ libelle }}</option>
+                {% endfor %}
+                <option value="CASNOS">CASNOS — Bordereau de versement (cotisation sociale, hors DGI)</option>
+            </select>
+
+            <label>NIF</label>
+            <input type="text" name="nif" placeholder="Numéro d'identification fiscale" required>
+
+            <label>Nom / Raison sociale</label>
+            <input type="text" name="raison_sociale" required>
+
+            <label>Adresse fiscale</label>
+            <input type="text" name="adresse" required>
+
+            <label>N° d'article d'imposition</label>
+            <input type="text" name="numero_article" placeholder="ex : 164010123456">
+
+            <label>Période concernée</label>
+            <input type="text" name="periode" placeholder="ex : Janvier 2026, Exercice 2025..." required>
+
+            <label>Date d'échéance</label>
+            <input type="date" name="date_echeance" value="{{ today }}" required>
+
+            <!-- ============================= G50 ============================= -->
+            <fieldset id="fields-g50" class="formulaire-fields" style="display:none;">
+                <legend>G50 — champs repris tels quels sur le formulaire officiel</legend>
+
+                <label>Mois</label>
+                <input type="text" name="mois" placeholder="ex : Janvier">
+                <label>Année</label>
+                <input type="text" name="annee" placeholder="ex : 2026">
+                <label>Commune</label>
+                <input type="text" name="commune">
+                <label>Profession / Activité</label>
+                <input type="text" name="profession_activite">
+                <label>NIN</label>
+                <input type="text" name="nin" maxlength="19" placeholder="chiffres uniquement">
+
+                <p class="field-hint">Bloc IBS/ICBS — Acompte / Solde de liquidation :</p>
+                <label>Acompte provisionnel IBS (E1M10)</label>
+                <input type="number" step="0.01" name="ibs_acompte_provisionnel">
+                <label>Solde de liquidation IBS</label>
+                <input type="number" step="0.01" name="ibs_solde_liquidation">
+                <label>Acompte provisionnel ICBS</label>
+                <input type="number" step="0.01" name="icbs_acompte_provisionnel">
+                <label>Solde de liquidation ICBS</label>
+                <input type="number" step="0.01" name="icbs_solde_liquidation">
+                <label>Total bloc IBS/ICBS</label>
+                <input type="number" step="0.01" name="bloc1_total">
+
+                <p class="field-hint">Bloc IRG — Traitements, salaires (E1L20, barème) :</p>
+                <label>Montant IRG/traitements et salaires</label>
+                <input type="number" step="0.01" name="irg_traitements_salaires">
+
+                <p class="field-hint">
+                    Les blocs TVA / TLS / Droit de timbre (pages 2 à 6 du formulaire)
+                    ne sont pas encore reliés au PDF — voir README.md, section
+                    « Compléter le calibrage ».
+                </p>
+            </fieldset>
+
+            <!-- ============================= G12 ============================= -->
+            <fieldset id="fields-g12" class="formulaire-fields" style="display:none;">
+                <legend>G12 bis — Déclaration définitive IFU</legend>
+
+                <label>Wilaya (DIW de)</label>
+                <input type="text" name="wilaya">
+                <label>Structure</label>
+                <input type="text" name="structure">
+                <label>Recette des impôts de</label>
+                <input type="text" name="recette_impots">
+                <label>Commune</label>
+                <input type="text" name="commune">
+                <label>Année de la déclaration</label>
+                <input type="text" name="annee" placeholder="ex : 2025">
+                <label>Période du</label>
+                <input type="text" name="periode_du" placeholder="jj/mm/aaaa">
+                <label>Période au</label>
+                <input type="text" name="periode_au" placeholder="jj/mm/aaaa">
+
+                <label>Activité(s) exercée(s)</label>
+                <input type="text" name="activite">
+                <label>Date de début d'activité</label>
+                <input type="text" name="date_debut_activite" placeholder="jj/mm/aaaa">
+                <label>Activité exonérée</label>
+                <input type="text" name="activite_exoneree" placeholder="Non / préciser">
+                <label>Adresse du lieu d'exercice</label>
+                <input type="text" name="adresse_activite">
+                <label>Adresse du domicile</label>
+                <input type="text" name="adresse_domicile">
+                <label>NIN</label>
+                <input type="text" name="nin">
+                <label>Téléphone</label>
+                <input type="text" name="telephone">
+
+                <p class="field-hint">Volet réservé aux salaires :</p>
+                <label>Nombre de salariés</label>
+                <input type="number" name="nb_salaries">
+                <label>Montant global brut des salaires versés</label>
+                <input type="number" step="0.01" name="salaires_bruts">
+                <label>Montant des charges sociales versées</label>
+                <input type="number" step="0.01" name="charges_sociales">
+                <label>Montant annuel de l'IRG acquitté</label>
+                <input type="number" step="0.01" name="irg_annuel_acquitte">
+
+                <p class="field-hint">Chiffre d'affaires — Activités de production/vente de marchandises (5%) :</p>
+                <label>Imposable réalisé</label>
+                <input type="number" step="0.01" name="vente_imp_realise">
+                <label>Global réalisé</label>
+                <input type="number" step="0.01" name="vente_glb_realise">
+
+                <p class="field-hint">Chiffre d'affaires — Prestations de services (12%) :</p>
+                <label>Imposable réalisé</label>
+                <input type="number" step="0.01" name="service_imp_realise">
+                <label>Global réalisé</label>
+                <input type="number" step="0.01" name="service_glb_realise">
+
+                <label>Total imposable réalisé</label>
+                <input type="number" step="0.01" name="total_imp_realise">
+                <label>Total global réalisé</label>
+                <input type="number" step="0.01" name="total_glb_realise">
+
+                <label>Revenu net correspondant au CA déclaré</label>
+                <input type="number" step="0.01" name="revenu_net">
+                <label>IFU à payer (A)+(B)</label>
+                <input type="number" step="0.01" name="ifu_a_payer">
+
+                <label>Lieu de signature</label>
+                <input type="text" name="lieu_signature">
+                <label>Date de signature</label>
+                <input type="text" name="date_signature" placeholder="jj/mm/aaaa">
+                <label>Montant IFU acquitté — en chiffres</label>
+                <input type="text" name="montant_ifu_chiffres">
+                <label>Montant IFU acquitté — en lettres</label>
+                <input type="text" name="montant_ifu_lettres">
+            </fieldset>
+
+            <!-- ============================= G1 ============================= -->
+            <fieldset id="fields-g1" class="formulaire-fields" style="display:none;">
+                <legend>G1 — Identification et résumé (revenu net imposable)</legend>
+
+                <label>Nom et prénoms</label>
+                <input type="text" name="nom_prenoms">
+                <label>Date et lieu de naissance</label>
+                <input type="text" name="date_lieu_naissance">
+                <label>Profession</label>
+                <input type="text" name="profession">
+                <label>Adresse de résidence principale</label>
+                <input type="text" name="adresse_residence">
+                <label>Commune de résidence</label>
+                <input type="text" name="commune_residence">
+                <label>Wilaya de résidence</label>
+                <input type="text" name="wilaya_residence">
+                <label>Code postal</label>
+                <input type="text" name="code_postal_residence" maxlength="6">
+                <label>NIN</label>
+                <input type="text" name="nin">
+
+                <label>Compte bancaire / Trésor</label>
+                <input type="text" name="compte_bancaire">
+                <label>Compte postal (CCP)</label>
+                <input type="text" name="compte_postal">
+                <label>Téléphone</label>
+                <input type="text" name="telephone">
+                <label>Email</label>
+                <input type="text" name="email">
+                <label>Fax</label>
+                <input type="text" name="fax">
+
+                <label>Situation familiale</label>
+                <select name="situation_familiale">
+                    <option value="celibataire">Célibataire</option>
+                    <option value="marie">Marié(e)</option>
+                    <option value="veuf">Veuf/veuve</option>
+                    <option value="divorce">Divorcé(e)</option>
+                </select>
+                <label>Nom et prénoms du conjoint</label>
+                <input type="text" name="conjoint_nom">
+                <label>Date et lieu de naissance du conjoint</label>
+                <input type="text" name="conjoint_naissance">
+                <label>Nombre d'enfants à charge</label>
+                <input type="number" name="nb_enfants_charge">
+
+                <p class="field-hint">Revenus soumis au prélèvement libératoire (non intégrés au revenu global) :</p>
+                <label>Revenus fonciers (libératoire)</label>
+                <input type="number" step="0.01" name="revenus_fonciers_liberatoire">
+                <label>Plus-values de cession</label>
+                <input type="number" step="0.01" name="plus_values_cession">
+                <label>Revenus mobiliers (libératoire)</label>
+                <input type="number" step="0.01" name="revenus_mobiliers_liberatoire">
+
+                <p class="field-hint">Revenus intégrés au revenu global (barème IRG progressif) :</p>
+                <label>Bénéfices industriels et commerciaux</label>
+                <input type="number" step="0.01" name="benefices_industriels_commerciaux">
+                <label>Bénéfices des professions non commerciales</label>
+                <input type="number" step="0.01" name="benefices_non_commerciaux">
+                <label>Revenus agricoles</label>
+                <input type="number" step="0.01" name="revenus_agricoles">
+                <label>Revenus fonciers (imposition temporaire)</label>
+                <input type="number" step="0.01" name="revenus_fonciers_temporaires">
+                <label>Revenus mobiliers (crédit d'impôt)</label>
+                <input type="number" step="0.01" name="revenus_mobiliers_credit_impot">
+                <label>Salaires, traitements, pensions</label>
+                <input type="number" step="0.01" name="salaires_traitements">
+                <label>Revenus réalisés hors d'Algérie</label>
+                <input type="number" step="0.01" name="revenus_etranger">
+
+                <p class="field-hint">Charges déductibles :</p>
+                <label>Intérêts de crédit logement déductibles</label>
+                <input type="number" step="0.01" name="interets_credit_logement">
+                <label>Autres déductions autorisées</label>
+                <input type="number" step="0.01" name="autres_deductions">
+
+                <p class="field-hint">
+                    Le total des revenus intégrés, le total des charges déductibles, le revenu net global,
+                    la réduction de 10% et le revenu net imposable sont calculés automatiquement à partir
+                    des montants ci-dessus — vous n'avez rien à reporter vous-même.
+                </p>
+                <label>Lieu et date de signature</label>
+                <input type="text" name="lieu_date_signature" placeholder="ex : Alger, 15/03/2026">
+
+                <p class="field-hint">
+                    Les tableaux détaillés par catégorie de revenu (pages 2 à 5 :
+                    BIC, BNC, agricole, foncier, plus-values) ne sont pas encore
+                    reliés au PDF — reportez-en directement les totaux ci-dessus.
+                    Voir README.md, section « Compléter le calibrage ».
+                </p>
+            </fieldset>
+
+            <!-- ============================ CASNOS ============================ -->
+            <fieldset id="fields-casnos" class="formulaire-fields" style="display:none;">
+                <legend>CASNOS — Bordereau de versement</legend>
+                <p class="field-hint">La CASNOS n'a pas de formulaire DGI ; ce bordereau reste un
+                    récapitulatif imprimable généré par MADA, pas une reproduction d'un imprimé officiel.</p>
+                <label>Nature du versement</label>
+                <select name="nature_versement">
+                    {% for nature in natures_versement_casnos %}
+                    <option value="{{ nature }}">{{ nature }}</option>
+                    {% endfor %}
+                </select>
+                <label>Base de cotisation annuelle (DZD)</label>
+                <input type="number" step="0.01" name="base_cotisation">
+                <label>Montant à verser (DZD)</label>
+                <input type="number" step="0.01" name="montant_versement">
+                <label>Mode de paiement</label>
+                <select name="mode_paiement">
+                    {% for mode in modes_paiement %}
+                    <option value="{{ mode }}">{{ mode|capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </fieldset>
+
+            <button type="submit" class="btn-primary btn-block">Ajouter</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h3>Mes déclarations</h3>
+        {% if declarations %}
+        <table class="data-table">
+            <thead>
+                <tr><th>Déclaration</th><th>Administration</th><th>Période</th><th>Échéance</th><th>Statut</th><th></th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for d in declarations %}
+                <tr>
+                    <td><span class="decl-badge decl-{{ d.type|lower }}">{{ d.type }}</span></td>
+                    <td>{{ d.administration }}</td>
+                    <td>{{ d.periode }}</td>
+                    <td class="{{ 'text-danger' if d.statut=='en retard' else '' }}">{{ d.date_echeance }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_statut_declaration', decl_id=d.id) }}">
+                            <select name="statut" onchange="this.form.submit()">
+                                <option value="en attente" {{ 'selected' if d.statut=='en attente' }}>En attente</option>
+                                <option value="payée" {{ 'selected' if d.statut=='payée' }}>Payée</option>
+                                <option value="en retard" {{ 'selected' if d.statut=='en retard' }}>En retard</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('generate_declaration_form', decl_id=d.id) }}" target="_blank" class="btn-icon" title="Générer le PDF officiel rempli">📄</a>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_declaration', decl_id=d.id) }}" onsubmit="return confirm('Supprimer cette déclaration ?');">
+                            <button type="submit" class="btn-icon-del" title="Supprimer">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">Aucune déclaration enregistrée pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleFormulaireFields() {
+    const type = document.getElementById('type-declaration').value;
+    document.querySelectorAll('.formulaire-fields').forEach(f => f.style.display = 'none');
+    const el = document.getElementById('fields-' + type.toLowerCase());
+    if (el) el.style.display = 'block';
+}
+document.addEventListener('DOMContentLoaded', toggleFormulaireFields);
+</script>
+
+{% endblock %}

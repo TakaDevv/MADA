@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Rapports{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Rapports</h1>
+        <p class="page-sub">Générez un résumé de votre activité sur une période donnée.</p>
+    </div>
+    <a href="{{ url_for('export_csv', date_debut=date_debut, date_fin=date_fin) }}" class="btn-primary">⬇ Exporter en CSV</a>
+</div>
+
+<div class="panel">
+    <form method="GET" action="{{ url_for('reports') }}" class="filter-row">
+        <div>
+            <label>Du</label>
+            <input type="date" name="date_debut" value="{{ date_debut }}">
+        </div>
+        <div>
+            <label>Au</label>
+            <input type="date" name="date_fin" value="{{ date_fin }}">
+        </div>
+        <button type="submit" class="btn-secondary">Filtrer</button>
+        <a href="{{ url_for('reports') }}" class="btn-ghost">Réinitialiser</a>
+    </form>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card kpi-solde">
+        <div class="kpi-label">Solde net</div>
+        <div class="kpi-value">{{ "%.2f"|format(solde) }} <span>DZD</span></div>
+    </div>
+    <div class="kpi-card kpi-recette">
+        <div class="kpi-label">Total recettes</div>
+        <div class="kpi-value">{{ "%.2f"|format(total_recettes) }} <span>DZD</span></div>
+    </div>
+    <div class="kpi-card kpi-depense">
+        <div class="kpi-label">Total dépenses</div>
+        <div class="kpi-value">{{ "%.2f"|format(total_depenses) }} <span>DZD</span></div>
+    </div>
+</div>
+
+<div class="dashboard-grid two-col">
+    <div class="panel">
+        <h3>Répartition par catégorie</h3>
+        {% if par_categorie %}
+        <table class="mini-table">
+            {% for (type, cat), total in par_categorie.items() %}
+            <tr>
+                <td><span class="tag tag-{{ type }}">{{ cat }}</span></td>
+                <td class="cell-amount {{ 'amount-pos' if type=='recette' else 'amount-neg' }}">
+                    {{ "%.2f"|format(total) }} DZD
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty-state">Aucune donnée sur cette période.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3>Détail des opérations</h3>
+        {% if operations %}
+        <div class="scroll-table">
+        <table class="data-table">
+            <thead><tr><th>Date</th><th>Catégorie</th><th>Montant</th></tr></thead>
+            <tbody>
+                {% for op in operations %}
+                <tr>
+                    <td>{{ op.date_operation }}</td>
+                    <td><span class="tag tag-{{ op.type }}">{{ op.categorie }}</span></td>
+                    <td class="cell-amount {{ 'amount-pos' if op.type=='recette' else 'amount-neg' }}">
+                        {{ '+' if op.type=='recette' else '-' }}{{ "%.2f"|format(op.montant) }} DZD
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">Aucune opération sur cette période.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
